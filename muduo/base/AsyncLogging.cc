@@ -31,6 +31,13 @@ AsyncLogging::AsyncLogging(const string& basename,
   buffers_.reserve(16);
 }
 
+/*
+  typedef muduo::detail::FixedBuffer<muduo::detail::kLargeBuffer> Buffer;
+  typedef std::vector<std::unique_ptr<Buffer>> BufferVector;
+  typedef BufferVector::value_type BufferPtr;
+  其中缓冲区默认都为FixedBuffer<4000*1000>，其内部有一个char data_[4000*1000]的缓冲区
+  通过currentBuffer(unique_ptr)调用FixedBuffer::append,append底层调用memcpy向缓冲区填充数据
+*/
 void AsyncLogging::append(const char* logline, int len)
 {
   muduo::MutexLockGuard lock(mutex_);
