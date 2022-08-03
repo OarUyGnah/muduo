@@ -60,6 +60,7 @@ void AsyncLogging::threadFunc()
   assert(running_ == true);
   latch_.countDown();
   LogFile output(basename_, rollSize_, false);
+  //两块备用buffer，缓冲区写满后用其替代
   BufferPtr newBuffer1(new Buffer);
   BufferPtr newBuffer2(new Buffer);
   newBuffer1->bzero();
@@ -76,11 +77,16 @@ void AsyncLogging::threadFunc()
       muduo::MutexLockGuard lock(mutex_);
       if (buffers_.empty())  // unusual usage!
       {
+        //有时间的等待，过了时间若没有也继续
         cond_.waitForSeconds(flushInterval_);
       }
+      //缓冲区放入vector中
       buffers_.push_back(std::move(currentBuffer_));
+      //替换新缓冲区
       currentBuffer_ = std::move(newBuffer1);
+      //swap内部只是交换指针
       buffersToWrite.swap(buffers_);
+      //如果nextbuffer也用了，则替换
       if (!nextBuffer_)
       {
         nextBuffer_ = std::move(newBuffer2);
@@ -88,7 +94,7 @@ void AsyncLogging::threadFunc()
     }
 
     assert(!buffersToWrite.empty());
-
+    //如果要写的超过25条，则只留两条，剩余的丢弃
     if (buffersToWrite.size() > 25)
     {
       char buf[256];
@@ -99,19 +105,19 @@ void AsyncLogging::threadFunc()
       output.append(buf, static_cast<int>(strlen(buf)));
       buffersToWrite.erase(buffersToWrite.begin()+2, buffersToWrite.end());
     }
-
+    //遍历并append
     for (const auto& buffer : buffersToWrite)
     {
       // FIXME: use unbuffered stdio FILE ? or use ::writev ?
       output.append(buffer->data(), buffer->length());
     }
-
+    
     if (buffersToWrite.size() > 2)
     {
       // drop non-bzero-ed buffers, avoid trashing
       buffersToWrite.resize(2);
     }
-
+    //如果newBuffer1和newBuffer2被用，则从buffersToWrite取一块新的，并将其pop_back
     if (!newBuffer1)
     {
       assert(!buffersToWrite.empty());
@@ -119,7 +125,7 @@ void AsyncLogging::threadFunc()
       buffersToWrite.pop_back();
       newBuffer1->reset();
     }
-
+    
     if (!newBuffer2)
     {
       assert(!buffersToWrite.empty());
@@ -127,10 +133,12 @@ void AsyncLogging::threadFunc()
       buffersToWrite.pop_back();
       newBuffer2->reset();
     }
-
+    //
     buffersToWrite.clear();
     output.flush();
-  }
+  } //end while
+  
+  //Logfile::flush -> AppendFile::flush -> fflush()
   output.flush();
 }
 
