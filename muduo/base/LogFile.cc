@@ -29,6 +29,7 @@ LogFile::LogFile(const string& basename,
     lastRoll_(0),
     lastFlush_(0)
 {
+  //确保basename没有'/'，保证其只是当下路径的文件
   assert(basename.find('/') == string::npos);
   rollFile();
 }
