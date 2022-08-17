@@ -28,9 +28,9 @@ TcpServer::TcpServer(EventLoop* loop,
     name_(nameArg),
     acceptor_(new Acceptor(loop, listenAddr, option == kReusePort)),
     threadPool_(new EventLoopThreadPool(loop, name_)),
-    connectionCallback_(defaultConnectionCallback),
-    messageCallback_(defaultMessageCallback),
-    nextConnId_(1)
+    connectionCallback_(defaultConnectionCallback),     //TcpConnection.cc
+    messageCallback_(defaultMessageCallback),           //TcpConnection.cc
+    nextConnId_(1)                                      //第一个连接为1，随着连接增加在newConnection内部递增
 {
   acceptor_->setNewConnectionCallback(
       std::bind(&TcpServer::newConnection, this, _1, _2));
@@ -71,10 +71,12 @@ void TcpServer::start()
 void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr)
 {
   loop_->assertInLoopThread();
+  //线程池获得一个EventLoop*,并将当前的创建的新TcpConnection放入这个线程中运行
   EventLoop* ioLoop = threadPool_->getNextLoop();
   char buf[64];
   snprintf(buf, sizeof buf, "-%s#%d", ipPort_.c_str(), nextConnId_);
   ++nextConnId_;
+  //当前TcpConnection的名字 = servername-ipPort#nextConnId_
   string connName = name_ + buf;
 
   LOG_INFO << "TcpServer::newConnection [" << name_
@@ -83,17 +85,20 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr)
   InetAddress localAddr(sockets::getLocalAddr(sockfd));
   // FIXME poll with zero timeout to double confirm the new connection
   // FIXME use make_shared if necessary
+  //创建新的TcpConnection的shared_ptr
   TcpConnectionPtr conn(new TcpConnection(ioLoop,
                                           connName,
                                           sockfd,
                                           localAddr,
                                           peerAddr));
   connections_[connName] = conn;
+  //设置相关的回调函数
   conn->setConnectionCallback(connectionCallback_);
   conn->setMessageCallback(messageCallback_);
   conn->setWriteCompleteCallback(writeCompleteCallback_);
   conn->setCloseCallback(
       std::bind(&TcpServer::removeConnection, this, _1)); // FIXME: unsafe
+  //将当前的创建的新TcpConnection的connectEstablished()放入线程中运行
   ioLoop->runInLoop(std::bind(&TcpConnection::connectEstablished, conn));
 }
 
