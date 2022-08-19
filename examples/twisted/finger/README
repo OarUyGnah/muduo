@@ -9,4 +9,5 @@ specification, and waits for the RUIP to respond.  The RUIP receives
 and processes the query, returns an answer, then initiates the close
 of the connection.  The local host receives the answer and the close
 signal, then proceeds closing its end of the connection."
-
+example:
+    g++ finger07.cc -lmuduo_net -lmuduo_base -lpthread
