@@ -38,3 +38,9 @@ how to use muduo in your project.
  | |  | | |_| | (_| | |_| | (_) |
  |_|  |_|\__,_|\__,_|\__,_|\___/
 
+
+
+examples:
+	g++ x.cc -lpthread -lmuduo_net -lmuduo_base
+compile and install see
+	https://blog.csdn.net/LINZEYU666/article/details/119269587?utm_medium=distribute.pc_feed_404.none-task-blog-2~default~BlogCommendFromBaidu~Rate-5-119269587-blog-null.pc_404_mixedpudn&depth_1-utm_source=distribute.pc_feed_404.none-task-blog-2~default~BlogCommendFromBaidu~Rate-5-119269587-blog-null.pc_404_mixedpud
