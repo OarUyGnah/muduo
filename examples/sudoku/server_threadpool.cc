@@ -24,6 +24,7 @@ class SudokuServer
       numThreads_(numThreads),
       startTime_(Timestamp::now())
   {
+       //Callbacks.h 触发时会调用回调函数，那时候输入参数对应占位符
     server_.setConnectionCallback(
         std::bind(&SudokuServer::onConnection, this, _1));
     server_.setMessageCallback(
