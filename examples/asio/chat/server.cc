@@ -22,6 +22,8 @@ class ChatServer : noncopyable
   {
     server_.setConnectionCallback(
         std::bind(&ChatServer::onConnection, this, _1));
+    // server接收到message首先调用成员绑定的回调函数 : codec_的onMessage进行header长度的解析
+    // codec的onMessage在其内部调用了构造函数绑定的回调函数ChatServer::onStringMessage进行数据的发送
     server_.setMessageCallback(
         std::bind(&LengthHeaderCodec::onMessage, &codec_, _1, _2, _3));
   }
