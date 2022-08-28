@@ -46,7 +46,7 @@ class Thread : noncopyable
   ThreadFunc func_;
   string     name_;
   CountDownLatch latch_;
-
+  // 静态原子int变量，用于记录产生的线程数
   static AtomicInt32 numCreated_;
 };
 
