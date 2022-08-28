@@ -74,6 +74,7 @@ struct ThreadData
   {
     *tid_ = muduo::CurrentThread::tid();
     tid_ = NULL;
+    // 无论接下来func_()调用成功与否，都latch_->countDown()表示此线程已完成任务
     latch_->countDown();
     latch_ = NULL;
 
