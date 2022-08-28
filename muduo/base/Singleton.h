@@ -37,6 +37,10 @@ class Singleton : noncopyable
 
   static T& instance()
   {
+    /*
+        本函数使用初值为PTHREAD_ONCE_INIT的once_control变量保证init_routine()函数在本进程执行序列中仅执行一次。
+        int pthread_once(pthread_once_t *once_control, void (*init_routine) (void));
+    */
     pthread_once(&ponce_, &Singleton::init);
     assert(value_ != NULL);
     return *value_;
@@ -48,6 +52,7 @@ class Singleton : noncopyable
     value_ = new T();
     if (!detail::has_no_destroy<T>::value)
     {
+      // 登记 destroy函数，程序exit(0)时调用
       ::atexit(destroy);
     }
   }
