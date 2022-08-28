@@ -30,6 +30,7 @@ pid_t gettid()
 
 void afterFork()
 {
+  // fork以后调用，仍恢复为主进程信息
   muduo::CurrentThread::t_cachedTid = 0;
   muduo::CurrentThread::t_threadName = "main";
   CurrentThread::tid();
@@ -39,10 +40,12 @@ void afterFork()
 class ThreadNameInitializer
 {
  public:
+  // 初始化为main线程相关信息
   ThreadNameInitializer()
   {
     muduo::CurrentThread::t_threadName = "main";
     CurrentThread::tid();
+    // fork()以后子进程调用afterFork
     pthread_atfork(NULL, NULL, &afterFork);
   }
 };
@@ -161,7 +164,7 @@ Thread::~Thread()
 
 void Thread::setDefaultName()
 {
-  int num = numCreated_.incrementAndGet();
+  int num = numCreated_.incrementAndGet();  // num = ++numCreated_;
   if (name_.empty())
   {
     char buf[32];
@@ -184,6 +187,7 @@ void Thread::start()
   }
   else
   {
+    // 等待latch_.countDown()
     latch_.wait();
     assert(tid_ > 0);
   }
