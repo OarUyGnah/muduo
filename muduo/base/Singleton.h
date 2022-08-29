@@ -40,6 +40,9 @@ class Singleton : noncopyable
     /*
         本函数使用初值为PTHREAD_ONCE_INIT的once_control变量保证init_routine()函数在本进程执行序列中仅执行一次。
         int pthread_once(pthread_once_t *once_control, void (*init_routine) (void));
+        即使多个线程都调用了instance()函数
+        pthread_once还是能保证init()函数只被执行一次
+        这种方式比使用锁的效率高
     */
     pthread_once(&ponce_, &Singleton::init);
     assert(value_ != NULL);
@@ -53,12 +56,15 @@ class Singleton : noncopyable
     if (!detail::has_no_destroy<T>::value)
     {
       // 登记 destroy函数，程序exit(0)时调用
+      // 在整个程序结束时，调用销毁函数(因此不需要手动销毁)
       ::atexit(destroy);
     }
   }
 
   static void destroy()
   {
+    // 如果T只是前向声明，是不完全类型，则delete value_;运行时会报错
+    // 因此使用此typedef，如果是不完全类型则编译期则报错
     typedef char T_must_be_complete_type[sizeof(T) == 0 ? -1 : 1];
     T_must_be_complete_type dummy; (void) dummy;
 
