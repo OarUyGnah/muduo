@@ -13,13 +13,20 @@
 
 namespace muduo
 {
-
+/*
+   在多线程程序中，所有线程共享进程中的变量。
+   现在有一全局变量，所有线程都可以使用它，改变它的值。
+   而如果每个线程希望能单独拥有它，那么就需要使用线程存储了。
+   表面上看起来这是一个全局变量，所有线程都可以使用它，而它的值在每一个线程中又是单独存储的。这就是线程存储的意义。
+*/
 template<typename T>
 class ThreadLocal : noncopyable
 {
  public:
   ThreadLocal()
   {
+    // 初始化并设置清理函数
+    // 当每个线程结束时，系统将调用这个函数来释放绑定在这个键上的内存块。
     MCHECK(pthread_key_create(&pkey_, &ThreadLocal::destructor));
   }
 
@@ -41,7 +48,7 @@ class ThreadLocal : noncopyable
   }
 
  private:
-
+  // 参数x为pthread_setspecific的那块内存，进行delete
   static void destructor(void *x)
   {
     T* obj = static_cast<T*>(x);
