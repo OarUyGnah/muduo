@@ -14,7 +14,10 @@
 
 namespace muduo
 {
-
+/*
+   https://blog.csdn.net/yockie/article/details/64906787
+   Boost::circular_buffer——循环缓冲区
+*/
 template<typename T>
 class BoundedBlockingQueue : noncopyable
 {
@@ -23,7 +26,7 @@ class BoundedBlockingQueue : noncopyable
     : mutex_(),
       notEmpty_(mutex_),
       notFull_(mutex_),
-      queue_(maxSize)
+      queue_(maxSize) // 设置循环缓冲区大小
   {
   }
 
