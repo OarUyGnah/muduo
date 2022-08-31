@@ -11,7 +11,7 @@
 #include "muduo/base/CountDownLatch.h"
 #include "muduo/base/Mutex.h"
 #include "muduo/base/Thread.h"
-#include "muduo/base/LogStream.h"
+#include "muduo/base/LogStream.h"       // FixedBuffer
 
 #include <atomic>
 #include <vector>
