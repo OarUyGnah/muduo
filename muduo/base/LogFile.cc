@@ -15,7 +15,7 @@
 using namespace muduo;
 
 LogFile::LogFile(const string& basename,
-                 off_t rollSize,
+                 off_t rollSize, // 自定义rollsize大小
                  bool threadSafe,
                  int flushInterval,//LogFile::flush()调用间隔
                  int checkEveryN)
@@ -66,9 +66,9 @@ void LogFile::flush()
 
 void LogFile::append_unlocked(const char* logline, int len)
 {
-  //FileUtil::AppendFile::append -> FileUtil::AppendFile::write -> ::fwrite_unlocked
+  // FileUtil::AppendFile::append -> FileUtil::AppendFile::write -> ::fwrite_unlocked
   file_->append(logline, len);
-  //如果AppendFile已写入的字节 > rollSize_,则rollFile宠幸
+  // 如果AppendFile已写入的字节 > 自己定义的rollSize_,则调用rollFile
   if (file_->writtenBytes() > rollSize_)
   {
     rollFile();
@@ -76,12 +76,13 @@ void LogFile::append_unlocked(const char* logline, int len)
   else
   {
     ++count_;
-    //如果count >= checkEveryN_ 则执行检查并修改相应成员变量
+    // 如果count >= checkEveryN_ 则执行检查并修改相应成员变量
     if (count_ >= checkEveryN_)
     {
       count_ = 0;
       time_t now = ::time(NULL);
-      time_t thisPeriod_ = now / kRollPerSeconds_ * kRollPerSeconds_;
+      time_t thisPeriod_ = now / kRollPerSeconds_ * kRollPerSeconds_; // 如果此时是当天的中午，则thisPeriod_也会回到这天的开始，即startOfPeriod_
+      // 如果!=则表明不是同一天，调用rollFile
       if (thisPeriod_ != startOfPeriod_)
       {
         rollFile();
@@ -99,9 +100,10 @@ void LogFile::append_unlocked(const char* logline, int len)
 bool LogFile::rollFile()
 {
   time_t now = 0;
+  // 获取日志名
   string filename = getLogFileName(basename_, &now);
   time_t start = now / kRollPerSeconds_ * kRollPerSeconds_;
-  //如果now比lastroll更晚，则将相应参数替换并重新reset指针
+  // 如果now比lastroll更晚，则将相应参数替换并重新reset指针
   if (now > lastRoll_)
   {
     lastRoll_ = now;
@@ -113,8 +115,8 @@ bool LogFile::rollFile()
   return false;
 }
 
-//filename 格式: basename+%Y%m%d-%H%M%S+ProcessInfo::hostname()+ProcessInfo::pid().log
-//更新now的时间
+// filename 格式: basename+%Y%m%d-%H%M%S+ProcessInfo::hostname()+ProcessInfo::pid().log
+// 更新now的时间
 string LogFile::getLogFileName(const string& basename, time_t* now)
 {
   string filename;
