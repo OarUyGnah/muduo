@@ -126,6 +126,9 @@ string LogFile::getLogFileName(const string& basename, time_t* now)
   char timebuf[32];
   struct tm tm;
   *now = time(NULL);
+  // gmtime_r() 函数将日历时间timep转换为用UTC时间表示的时间
+  // Beijing UTC+8
+  // localtime_r() 函数将日历时间timep转换为用户指定的时区的时间
   gmtime_r(now, &tm); // FIXME: localtime_r ?
   strftime(timebuf, sizeof timebuf, ".%Y%m%d-%H%M%S.", &tm);
   filename += timebuf;
