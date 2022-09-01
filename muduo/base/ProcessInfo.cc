@@ -22,6 +22,7 @@ namespace muduo
 {
 namespace detail
 {
+  // 每个线程一个 当前打开的文件数
 __thread int t_numOpenedFiles = 0;
 int fdDirFilter(const struct dirent* d)
 {
@@ -49,10 +50,14 @@ int scanDir(const char *dirpath, int (*filter)(const struct dirent *))
   assert(namelist == NULL);
   return result;
 }
-
+// 进程开始时设置
 Timestamp g_startTime = Timestamp::now();
+  
+// sysconf 函数用来获取系统执行的配置信息。例如页大小、最大页数、cpu个数、打开句柄的最大个数等等。
 // assume those won't change during the life time of a process.
+// _SC_CLK_TCK：每秒对应的时钟tick数
 int g_clockTicks = static_cast<int>(::sysconf(_SC_CLK_TCK));
+// _SC_PAGESIZE：一个page的大小，单位byte
 int g_pageSize = static_cast<int>(::sysconf(_SC_PAGE_SIZE));
 }  // namespace detail
 }  // namespace muduo
@@ -91,7 +96,7 @@ string ProcessInfo::username()
   }
   return name;
 }
-
+// returns the effective user ID of the calling process.
 uid_t ProcessInfo::euid()
 {
   return ::geteuid();
