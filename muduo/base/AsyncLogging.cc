@@ -41,14 +41,16 @@ AsyncLogging::AsyncLogging(const string& basename,
 void AsyncLogging::append(const char* logline, int len)
 {
   muduo::MutexLockGuard lock(mutex_);
+  // currentBuffer_能够写入当前的logline，则直接append
   if (currentBuffer_->avail() > len)
   {
     currentBuffer_->append(logline, len);
   }
   else
   {
+    // 不够写则将currentBuffer_放入指针vector中
     buffers_.push_back(std::move(currentBuffer_));
-
+    // 有nextBuffer_则移动赋值给currentBuffer_
     if (nextBuffer_)
     {
       currentBuffer_ = std::move(nextBuffer_);
@@ -61,21 +63,28 @@ void AsyncLogging::append(const char* logline, int len)
     cond_.notify();
   }
 }
+/*
+    buffers_对应threadFunc内部的buffersToWrite，二者每次循环进行swap，buffersToWrite负责写到Logfile中
+    currentBuffer_、nextBuffer_对应newBuffer1、newBuffer2，当前二者被移动push_back由后二者swap替代上
+    threadFunc内部主要就是进行buffer buffervector的更换和写入logfile，并从中获取
 
+*/
 void AsyncLogging::threadFunc()
 {
   assert(running_ == true);
   latch_.countDown();
   LogFile output(basename_, rollSize_, false);
-  //两块备用buffer，缓冲区写满后用其替代
+  // 两块备用buffer，缓冲区写满后用其替代
   BufferPtr newBuffer1(new Buffer);
   BufferPtr newBuffer2(new Buffer);
   newBuffer1->bzero();
   newBuffer2->bzero();
+  // 存放buffer unique_ptr的vector，用于和buffers_交换
   BufferVector buffersToWrite;
   buffersToWrite.reserve(16);
   while (running_)
   {
+    // 每轮都要确定buffer为空且buffervector空
     assert(newBuffer1 && newBuffer1->length() == 0);
     assert(newBuffer2 && newBuffer2->length() == 0);
     assert(buffersToWrite.empty());
@@ -101,7 +110,7 @@ void AsyncLogging::threadFunc()
     }
 
     assert(!buffersToWrite.empty());
-    //如果要写的超过25条，则只留两条，剩余的丢弃
+    //如果vector中要写的buffer超过25个，则只留前两个，剩余的丢弃
     if (buffersToWrite.size() > 25)
     {
       char buf[256];
@@ -124,7 +133,7 @@ void AsyncLogging::threadFunc()
       // drop non-bzero-ed buffers, avoid trashing
       buffersToWrite.resize(2);
     }
-    //如果newBuffer1和newBuffer2被用，则从buffersToWrite取一块新的，并将其pop_back
+    //如果newBuffer1和newBuffer2被currentBuffer_和nextBuffer_进行swap了，则从buffersToWrite取一块新的，并将其pop_back
     if (!newBuffer1)
     {
       assert(!buffersToWrite.empty());
@@ -140,7 +149,7 @@ void AsyncLogging::threadFunc()
       buffersToWrite.pop_back();
       newBuffer2->reset();
     }
-    //
+    
     buffersToWrite.clear();
     output.flush();
   } //end while
