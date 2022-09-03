@@ -82,6 +82,20 @@ uid_t ProcessInfo::uid()
   return ::getuid();
 }
 
+/*
+            struct passwd {
+                 char   *pw_name;       /* username */
+                 char   *pw_passwd;     /* user password */
+                 uid_t   pw_uid;        /* user ID */
+                 gid_t   pw_gid;        /* group ID */
+                 char   *pw_gecos;      /* user information */
+                 char   *pw_dir;        /* home directory */
+                 char   *pw_shell;      /* shell program */
+             };
+       The getpwuid() function returns a pointer to a structure containing the
+       broken-out  fields  of the record in the password database that matches
+       the user ID uid.
+*/
 string ProcessInfo::username()
 {
   struct passwd pwd;
@@ -186,6 +200,8 @@ string ProcessInfo::exePath()
 {
   string result;
   char buf[1024];
+  // https://blog.csdn.net/JK198310/article/details/41596775
+  // readlink()会将参数path的符号链接内容存储到参数buf所指的内存空间
   ssize_t n = ::readlink("/proc/self/exe", buf, sizeof buf);
   if (n > 0)
   {
@@ -214,6 +230,17 @@ int ProcessInfo::maxOpenFiles()
   }
 }
 
+/*
+      times()  stores  the  current  process times in the struct tms that buf
+      points to.  The struct tms is as defined in <sys/times.h>:
+
+           struct tms {
+               clock_t tms_utime;  /* user time */
+               clock_t tms_stime;  /* system time */
+               clock_t tms_cutime; /* user time of children */
+               clock_t tms_cstime; /* system time of children */
+           };
+*/
 ProcessInfo::CpuTime ProcessInfo::cpuTime()
 {
   ProcessInfo::CpuTime t;
@@ -231,10 +258,11 @@ int ProcessInfo::numThreads()
 {
   int result = 0;
   string status = procStatus();
+  // Threads: 1
   size_t pos = status.find("Threads:");
   if (pos != string::npos)
   {
-    result = ::atoi(status.c_str() + pos + 8);
+    result = ::atoi(status.c_str() + pos + 8); // or +9 ?
   }
   return result;
 }
