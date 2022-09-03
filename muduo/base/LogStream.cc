@@ -53,6 +53,10 @@ size_t convert(char buf[], T value)
   {
     int lsd = static_cast<int>(i % 10);
     i /= 10;
+    /* 
+       const char digits[] = "9876543210123456789";
+       const char* zero = digits + 9;
+    */ 
     *p++ = zero[lsd];
   } while (i != 0);
 
@@ -239,6 +243,7 @@ void LogStream::formatInteger(T v)
   if (buffer_.avail() >= kMaxNumericSize)
   {
     size_t len = convert(buffer_.current(), v);
+    // cur_ += len
     buffer_.add(len);
   }
 }
