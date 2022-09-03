@@ -84,13 +84,13 @@ uid_t ProcessInfo::uid()
 
 /*
             struct passwd {
-                 char   *pw_name;       /* username */
-                 char   *pw_passwd;     /* user password */
-                 uid_t   pw_uid;        /* user ID */
-                 gid_t   pw_gid;        /* group ID */
-                 char   *pw_gecos;      /* user information */
-                 char   *pw_dir;        /* home directory */
-                 char   *pw_shell;      /* shell program */
+                 char   *pw_name;       // username
+                 char   *pw_passwd;     // user password
+                 uid_t   pw_uid;        // user ID
+                 gid_t   pw_gid;        // group ID
+                 char   *pw_gecos;      // user information
+                 char   *pw_dir;        // home directory
+                 char   *pw_shell;      // shell program
              };
        The getpwuid() function returns a pointer to a structure containing the
        broken-out  fields  of the record in the password database that matches
