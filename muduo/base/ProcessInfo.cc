@@ -24,18 +24,21 @@ namespace detail
 {
   // 每个线程一个 当前打开的文件数
 __thread int t_numOpenedFiles = 0;
+
 int fdDirFilter(const struct dirent* d)
 {
   if (::isdigit(d->d_name[0]))
   {
     ++t_numOpenedFiles;
   }
+  // 返回0的过滤，因为只是查看d->d_name无需将其保留，故返回0
   return 0;
 }
 
 __thread std::vector<pid_t>* t_pids = NULL;
 int taskDirFilter(const struct dirent* d)
 {
+  // 开头为数字则为进程
   if (::isdigit(d->d_name[0]))
   {
     t_pids->push_back(atoi(d->d_name));
@@ -46,7 +49,9 @@ int taskDirFilter(const struct dirent* d)
 int scanDir(const char *dirpath, int (*filter)(const struct dirent *))
 {
   struct dirent** namelist = NULL;
+  // 通过调用filter，将返回值为非0的每个实体信息存储在namelist中
   int result = ::scandir(dirpath, &namelist, filter, alphasort);
+  // 扫描dir目标只是为了判断每个文件的名字，因此无需在namelist存储内容
   assert(namelist == NULL);
   return result;
 }
@@ -235,10 +240,10 @@ int ProcessInfo::maxOpenFiles()
       points to.  The struct tms is as defined in <sys/times.h>:
 
            struct tms {
-               clock_t tms_utime;  /* user time */
-               clock_t tms_stime;  /* system time */
-               clock_t tms_cutime; /* user time of children */
-               clock_t tms_cstime; /* system time of children */
+               clock_t tms_utime;  // user time 
+               clock_t tms_stime;  // system time
+               clock_t tms_cutime; // user time of children
+               clock_t tms_cstime; // system time of children
            };
 */
 ProcessInfo::CpuTime ProcessInfo::cpuTime()
