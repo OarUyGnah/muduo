@@ -41,6 +41,7 @@ __thread time_t t_lastSecond;
 
 const char* strerror_tl(int savedErrno)
 {
+  // return string describing error number
   return strerror_r(savedErrno, t_errnobuf, sizeof t_errnobuf);
 }
 
