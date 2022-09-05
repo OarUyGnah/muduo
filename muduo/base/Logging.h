@@ -32,6 +32,7 @@ class Logger
   class SourceFile
   {
    public:
+    // 用模板使其在编译期就可以进行
     template<int N>
     SourceFile(const char (&arr)[N])
       : data_(arr),
