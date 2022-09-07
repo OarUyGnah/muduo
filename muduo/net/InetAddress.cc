@@ -47,6 +47,8 @@ using namespace muduo::net;
 
 static_assert(sizeof(InetAddress) == sizeof(struct sockaddr_in6),
               "InetAddress is same size as sockaddr_in6");
+
+// #include <stddef.h> offsetof一个宏定义，返回对应的偏移量
 static_assert(offsetof(sockaddr_in, sin_family) == 0, "sin_family offset 0");
 static_assert(offsetof(sockaddr_in6, sin6_family) == 0, "sin6_family offset 0");
 static_assert(offsetof(sockaddr_in, sin_port) == 2, "sin_port offset 2");
