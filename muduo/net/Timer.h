@@ -26,6 +26,7 @@ namespace net
 class Timer : noncopyable
 {
  public:
+  // void()
   Timer(TimerCallback cb, Timestamp when, double interval)
     : callback_(std::move(cb)),
       expiration_(when),
