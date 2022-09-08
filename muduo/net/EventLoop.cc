@@ -32,6 +32,13 @@ const int kPollTimeMs = 10000;
 
 int createEventfd()
 {
+  /*
+       initval：创建eventfd时它所对应的64位计数器的初始值；
+       flags：eventfd文件描述符的标志，可由三种选项组成：EFD_CLOEXEC、EFD_NONBLOCK和EFD_SEMAPHORE。
+       EFD_CLOEXEC表示返回的eventfd文件描述符在fork后exec其他程序时会自动关闭这个文件描述符；
+       EFD_NONBLOCK设置返回的eventfd非阻塞；
+       EFD_SEMAPHORE表示将eventfd作为一个信号量来使用。 
+  */
   int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (evtfd < 0)
   {
@@ -70,7 +77,7 @@ EventLoop::EventLoop()
     threadId_(CurrentThread::tid()),
     poller_(Poller::newDefaultPoller(this)),
     timerQueue_(new TimerQueue(this)),
-    wakeupFd_(createEventfd()),
+    wakeupFd_(createEventfd()),         // 通过创建一个eventfd在其fd write写入触发事件
     wakeupChannel_(new Channel(this, wakeupFd_)),
     currentActiveChannel_(NULL)
 {
@@ -234,6 +241,7 @@ void EventLoop::abortNotInLoopThread()
 void EventLoop::wakeup()
 {
   uint64_t one = 1;
+  // 通过在eventfd内部写入触发事件
   ssize_t n = sockets::write(wakeupFd_, &one, sizeof one);
   if (n != sizeof one)
   {
