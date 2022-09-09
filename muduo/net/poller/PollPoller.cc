@@ -55,9 +55,11 @@ Timestamp PollPoller::poll(int timeoutMs, ChannelList* activeChannels)
 void PollPoller::fillActiveChannels(int numEvents,
                                     ChannelList* activeChannels) const
 {
+  // 遍历pollfds_
   for (PollFdList::const_iterator pfd = pollfds_.begin();
       pfd != pollfds_.end() && numEvents > 0; ++pfd)
   {
+    // 如果其中有返回事件，则将其放入activeChannels
     if (pfd->revents > 0)
     {
       --numEvents;
@@ -76,6 +78,7 @@ void PollPoller::updateChannel(Channel* channel)
 {
   Poller::assertInLoopThread();
   LOG_TRACE << "fd = " << channel->fd() << " events = " << channel->events();
+  // 如果当前channel没有放入pollfds_中 
   if (channel->index() < 0)
   {
     // a new one, add to pollfds_
@@ -89,18 +92,21 @@ void PollPoller::updateChannel(Channel* channel)
     channel->set_index(idx);
     channels_[pfd.fd] = channel;
   }
-  else
+  else // 已放入pollfds_中
   {
-    // update existing one
+    // 确保其在pollfds_中
     assert(channels_.find(channel->fd()) != channels_.end());
     assert(channels_[channel->fd()] == channel);
+    // 获取当前所在位置索引值
     int idx = channel->index();
     assert(0 <= idx && idx < static_cast<int>(pollfds_.size()));
+    // 找到并开始修改
     struct pollfd& pfd = pollfds_[idx];
     assert(pfd.fd == channel->fd() || pfd.fd == -channel->fd()-1);
     pfd.fd = channel->fd();
     pfd.events = static_cast<short>(channel->events());
     pfd.revents = 0;
+    // 如果当前channel请求事件为空，则先忽略，等下次PollPoller::updateChannel
     if (channel->isNoneEvent())
     {
       // ignore this pollfd
@@ -118,15 +124,19 @@ void PollPoller::removeChannel(Channel* channel)
   assert(channel->isNoneEvent());
   int idx = channel->index();
   assert(0 <= idx && idx < static_cast<int>(pollfds_.size()));
-  const struct pollfd& pfd = pollfds_[idx]; (void)pfd;
+  const struct pollfd& pfd = pollfds_[idx]; (void)pfd; // 消除编译器警告
+  
+  // 只有在PollPoller::updateChannel中if (channel->isNoneEvent())才会将其设置为-channel->fd()-1
   assert(pfd.fd == -channel->fd()-1 && pfd.events == channel->events());
   size_t n = channels_.erase(channel->fd());
-  assert(n == 1); (void)n;
+  assert(n == 1); (void)n; // 消除编译器警告
+  
+  // 如果在末尾则直接pop_back
   if (implicit_cast<size_t>(idx) == pollfds_.size()-1)
   {
     pollfds_.pop_back();
   }
-  else
+  else // 不是则将其换到尾部再pop_back
   {
     int channelAtEnd = pollfds_.back().fd;
     iter_swap(pollfds_.begin()+idx, pollfds_.end()-1);
@@ -134,6 +144,7 @@ void PollPoller::removeChannel(Channel* channel)
     {
       channelAtEnd = -channelAtEnd-1;
     }
+    // 将移到前面的pollfd的idx改为当前位置
     channels_[channelAtEnd]->set_index(idx);
     pollfds_.pop_back();
   }
