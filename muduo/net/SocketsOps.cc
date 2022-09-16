@@ -85,6 +85,7 @@ int sockets::createNonblockingOrDie(sa_family_t family)
 
   setNonBlockAndCloseOnExec(sockfd);
 #else
+  // IPPROTO_TCP 和 IPPTOTO_UDP，分别表示 TCP 传输协议和 UDP 传输协议。
   int sockfd = ::socket(family, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP);
   if (sockfd < 0)
   {
