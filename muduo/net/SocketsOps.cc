@@ -187,6 +187,12 @@ void sockets::close(int sockfd)
 
 void sockets::shutdownWrite(int sockfd)
 {
+  /*
+      关闭与 sockfd 关联的套接字。 
+          SHUT_RD 是怎样的，则不允许进一步的接收。 
+          SHUT_WR 怎样，则不允许进一步传输。
+          SHUT_RDWR 怎么样，将不允许进一步的接收和传输。
+  */
   if (::shutdown(sockfd, SHUT_WR) < 0)
   {
     LOG_SYSERR << "sockets::shutdownWrite";
