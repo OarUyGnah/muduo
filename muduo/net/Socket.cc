@@ -84,6 +84,8 @@ void Socket::shutdownWrite()
   sockets::shutdownWrite(sockfd_);
 }
 
+// TCP默认开启了Nagle算法。Nagle算法通过减少需要传输的数据包，来优化网络
+// 启动TCP_NODELAY，就意味着禁用了Nagle算法，允许小包的发送
 void Socket::setTcpNoDelay(bool on)
 {
   int optval = on ? 1 : 0;
