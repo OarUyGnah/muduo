@@ -154,6 +154,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len)
     if (nwrote >= 0)
     {
       remaining = len - nwrote;
+      // 写完成后调用回调 writeCompleteCallback_
       if (remaining == 0 && writeCompleteCallback_)
       {
         loop_->queueInLoop(std::bind(writeCompleteCallback_, shared_from_this()));
@@ -174,15 +175,18 @@ void TcpConnection::sendInLoop(const void* data, size_t len)
   }
 
   assert(remaining <= len);
+  // 如果没写完
   if (!faultError && remaining > 0)
   {
     size_t oldLen = outputBuffer_.readableBytes();
+    // 如果加上剩余要写的超过水位线，并且有高水位回调函数，则调用
     if (oldLen + remaining >= highWaterMark_
         && oldLen < highWaterMark_
         && highWaterMarkCallback_)
     {
       loop_->queueInLoop(std::bind(highWaterMarkCallback_, shared_from_this(), oldLen + remaining));
     }
+    // 直接append剩余数据到outputBuffer_中
     outputBuffer_.append(static_cast<const char*>(data)+nwrote, remaining);
     if (!channel_->isWriting())
     {
